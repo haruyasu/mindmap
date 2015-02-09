@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<title>マインドマップ</title>
+	<link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/themes/smoothness/jquery-ui.css" />
+	<script src="http://cdn.mlkcca.com/v0.2.8/milkcocoa.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/jquery-ui.min.js"></script>
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	<script src="http://static.tumblr.com/r4hvnts/ecInjggvv/raphael-min.js" type="text/javascript"></script>
+	<style>
+		body {
+/*
+			background: url("http://static.tumblr.com/r4hvnts/oShnje9uc/bg.png");
+*/
+			background: #2F4F4F;
+			font-family: "游ゴシック", YuGothic, "Lucida Grande", "ヒラギノ角ゴ ProN W3", "Hiragino Kaku Gothic ProN", "メイリオ", Meiryo, Arial, sans-serif;
+			font-size: 18px;
+			color: #444;
+			margin: 0;
+			line-height: 1.6;
+			text-align: center;
+		}
+
+		/* 全体マインド制御 */
+		.js-mindmap-active .node {
+			position: absolute;
+			top: 0;
+			left: 0;
+			filter: alpha(opacity=40);
+			-moz-opacity: 0.4;
+			opacity: 0.4;
+			padding: 0 7px;
+			cursor: pointer;
+			cursor: hand;
+			z-index: 100;
+			list-style: none;
+		}
+
+		/* 全体マインド */
+		.js-mindmap-active div.node {
+			background: #f0e68c;
+			-webkit-border-radius: 10px;
+			-moz-border-radius: 10px;
+			border-radius: 6px;
+		}
+
+		/* アクティブ中心マインド */
+		.js-mindmap-active div.node.active {
+			padding: 10px !important;
+			background: #ffc0cb;
+			filter: alpha(opacity=100);
+			-moz-opacity: 1;
+			opacity: 1;
+		}
+
+		/* アクティブ中心マインドの文字 */
+		.js-mindmap-active .node.active div {
+			color: #003258;
+		}
+
+		/* アクティブ中心の親マインド */
+		.js-mindmap-active div.node.activeparent {
+			padding: 5px !important;
+			background: #00bfff;
+			filter: alpha(opacity=75);
+			-moz-opacity: 0.75;
+			opacity: 0.75;
+		}
+
+		/* アクティブ中心の親マインドの文字 */
+		.js-mindmap-active .node.activeparent div {
+			color: #001228;
+		}
+
+		/* アクティブ中心の子マインド */
+		.js-mindmap-active div.node.children {
+			background: #ff7f50;
+			filter: alpha(opacity=65);
+			-moz-opacity: 0.65;
+			opacity: 0.65;
+		}
+
+		/* アクティブ中心以外の文字 */
+		.label {
+			color: #000;
+		}
+
+		/* 入力エリアの装飾 */
+		input[type=text]#label,
+		textarea#label {
+			width: 100%;
+		}
+
+
+/* ここからいらない */
+
+		#debug1 {
+			display:block;
+		}
+
+		.js-mindmap-active h1 {
+			display: none;
+		}
+
+		.js-mindmap-active section h1 {
+			display: block;
+		}
+
+		.js-mindmap-active div.node {
+			display: block;
+			text-align: left;
+		}
+
+		.js-mindmap-active .node.active {
+			font-size: 1.5em;
+		}
+
+		.js-mindmap-active img.line {
+			position: absolute;
+			width: 200px;
+			height: 133px;
+			top: 0;
+			left: 0;
+			display: block;
+			z-index: 0;
+		}
+
+		.ui-draggable {
+			position: absolute;
+		}
+
+		.js-mindmap-active .node .node-action {
+			position: absolute;
+			right: -2em;
+			bottom: -1px;
+			text-align: center;
+			vertical-align: super;
+		}
+ 
+		.name {
+			font-size: 7px;
+		}
+
+
+
+		p {
+			line-height: 5px;
+		}
+
+		span {
+			margin: 0px;
+			line-height: 5px;
+		}
+
+		#miku {
+			position: fixed;
+			bottom: 5px;
+			right: 5px;
+		}
+
+		div {
+			margin: 0px;
+			position: relative;
+		}
+
+		input[type=text]#label,
+		textarea#label {
+			-webkit-transition: all 0.30s ease-in-out;
+			-moz-transition: all 0.30s ease-in-out;
+			-ms-transition: all 0.30s ease-in-out;
+			-o-transition: all 0.30s ease-in-out;
+			-webkit-border-radius: 4px;
+			-moz-border-radius: 4px;
+			border-radius: 4px;
+			-moz-box-shadow: inset 1px 4px 9px -6px rgba(0, 0, 0, 0.5);
+			-webkit-box-shadow: inset 1px 4px 9px -6px rgba(0, 0, 0, 0.5);
+			box-shadow: inset 1px 4px 9px -6px rgba(0, 0, 0, 0.5);
+			-webkit-box-shadow: 0px 1px rgba(255, 255, 255, 0.5);
+			-moz-box-shadow: 0px 1px rgba(255, 255, 255, 0.5);
+			box-shadow: 0px 1px rgba(255, 255, 255, 0.5);
+			-webkit-border-radius: 3px;
+			-moz-border-radius: 3px;
+			border-radius: 3px;
+			width: 100%;
+			height: 90%;
+			outline: none;
+			padding: 3px 0px 3px 3px;
+			margin: 5px 1px 3px 0px;
+			border: 1px solid #DDDDDD;
+		}
+
+		input[type=text]#label:focus,
+		textarea#label:focus {
+			box-shadow: 0 0 5px rgba(81, 203, 238, 1);
+			padding: 3px 0px 3px 3px;
+			margin: 5px 1px 3px 0px;
+			border: 1px solid rgba(81, 203, 238, 1);
+		}
+
+		h4.modal-title {
+			text-align: center;
+			font-size: 18px;
+		}
+
+		div.modal-footer {
+			border-top: 0px #FFFFFF;
+			padding-top: 0px;
+			padding-bottom: 15px;
+			padding-left: 15px;
+			padding-right: 15px;
+		}
+
+		div.modal-body {
+			padding-top: 15px;
+			padding-bottom: 0px;
+			padding-left: 15px;
+			padding-right: 15px;
+		}
+
+		p.modal-alert {
+			color: red;
+			font-size: 13px;
+			padding-top: 25px;
+		}
+
+		div.label {
+			word-break: break-all;
+			word-wrap: break-word;
+		}
+
+		p.count-zero {
+			color: red;
+		}
+
+		.js-mindmap-active div.node.read {
+			padding: 5px 10px !important;
+			border-width: 4px !important;
+			background: #FF0000;
+			filter: alpha(opacity=90);
+			-moz-opacity: 0.9;
+			opacity: 0.9;
+		}
+
+
+	</style>
+
+	<script>
+		var CURRENT_NODE;
+
+		(function($) {
+			'use strict';
+
+			var TIMEOUT = 4, // movement timeout in seconds
+				CENTRE_FORCE = 10, //node少ないとき0.35くらいがいい  // strength of attraction to the centre by the active node
+				Node,
+				Line;
+
+			// Define all Node related functions.
+			Node = function(obj, name, parent, opts) {
+				this.obj = obj;
+				this.options = obj.options;
+				this.opts = opts;
+				if (opts == undefined) opts = {};
+
+				this.name = name;
+
+				// create the element for display
+				//if obj.children.length big, 
+				this.el = $('<div class="element"><div class="name">' + opts.name + '</div>' + '<div class="label">' + opts.label + '</div></div>').addClass('node');
+				$('body').prepend(this.el);
+
+				if (!parent) {
+					obj.activeNode = this;
+					this.el.addClass('active root');
+				} else {
+					obj.lines[obj.lines.length] = new Line(obj, this, parent);
+				}
+				this.parent = parent;
+				this.children = [];
+				if (this.parent) {
+					this.parent.children.push(this);
+				}
+
+				// animation handling
+				this.moving = false;
+				this.moveTimer = 0;
+				this.obj.movementStopped = false;
+				this.x = 1;
+				this.y = 1;
+				this.dx = 0;
+				this.dy = 0;
+				this.hasPosition = false;
+				this.visible = false;
+
+				this.content = []; // array of content elements to display onclick;
+
+				this.el.css('position', 'absolute');
+				this.el.hide();
+
+				var thisnode = this;
+
+				this.el.draggable({
+					drag: function() {
+						obj.root.animateToStatic();
+					}
+				});
+
+				var current_node = this.el;
+				this.el.click(function() {
+					if (obj.activeNode) {
+						obj.activeNode.el.removeClass('active');
+						obj.activeNode.children.forEach(function(node) {
+							node.el.removeClass('children');
+						});
+						//current_node.addClass('read'); //既読機能
+						if (obj.activeNode.parent) obj.activeNode.parent.el.removeClass('activeparent');
+					}
+					if (typeof opts.onclick === 'function') opts.onclick(thisnode);
+					obj.activeNode = thisnode;
+					CURRENT_NODE = thisnode;
+					obj.activeNode.el.addClass('active');
+					obj.activeNode.children.forEach(function(node) {
+						node.el.addClass('children');
+					});
+					if (obj.activeNode.parent) obj.activeNode.parent.el.addClass('activeparent');
+					obj.root.animateToStatic();
+					return false;
+				});
+
+				// undefined
+				this.el.contextmenu(function() {
+					if (typeof opts.onContextMenu === 'function') {
+						opts.onContextMenu(thisnode);
+					}
+					return false;
+				});
+
+			};
+
+			// ROOT NODE ONLY:	control animation loop
+			Node.prototype.animateToStatic = function() {
+				clearTimeout(this.moveTimer);
+				// stop the movement after a certain time
+				var thisnode = this;
+				this.moveTimer = setTimeout(function() {
+					//stop the movement
+					thisnode.obj.movementStopped = true;
+				}, TIMEOUT * 1000);
+
+				if (this.moving) {
+					return;
+				}
+				this.moving = true;
+				this.obj.movementStopped = false;
+				this.animateLoop();
+			};
+
+			// ROOT NODE ONLY:	animate all nodes (calls itself recursively)
+			Node.prototype.animateLoop = function() {
+				var i, len, mynode = this;
+				this.obj.canvas.clear();
+				for (i = 0, len = this.obj.lines.length; i < len; i++) {
+					this.obj.lines[i].updatePosition();
+				}
+				if (this.findEquilibrium() || this.obj.movementStopped) {
+					this.moving = false;
+					return;
+				}
+				setTimeout(function() {
+					mynode.animateLoop();
+				}, 10);
+			};
+
+			// find the right position for this node
+			Node.prototype.findEquilibrium = function() {
+				var i, len, stable = true;
+				stable = this.display() && stable;
+				for (i = 0, len = this.children.length; i < len; i++) {
+					stable = this.children[i].findEquilibrium() && stable;
+				}
+				return stable;
+			};
+
+			//Display this node, and its children
+			Node.prototype.display = function(depth) {
+				var parent = this,
+					stepAngle,
+					angle;
+
+				depth = depth || 0;
+
+				var shouldShow = isShouldShow(this);
+				var shouldHide = !shouldShow
+
+				if (this.visible) {
+					// if: I'm not active AND my parent's not active AND my children aren't active ...
+					if (shouldHide) {
+						// TODO hide me!
+						this.el.hide();
+						this.visible = false;
+					}
+				} else {
+					if (shouldShow) {
+						this.el.show();
+						this.visible = true;
+						if (CURRENT_NODE) {
+							this.x = CURRENT_NODE.x + Math.random() * 10;
+							this.y = CURRENT_NODE.y + Math.random() * 10;
+						}
+					} else {
+						//stop process animation
+						return;
+					}
+
+				}
+				this.drawn = true;
+				// am I positioned?  If not, position me.
+				if (!this.hasPosition) {
+					this.x = this.options.mapArea.x / 2;
+					this.y = this.options.mapArea.y / 2;
+					this.el.css({
+						'left': this.x + "px",
+						'top': this.y + "px"
+					});
+					this.hasPosition = true;
+				}
+				// are my children positioned?	if not, lay out my children around me
+				stepAngle = Math.PI * 2 / this.children.length;
+				$.each(this.children, function(index) {
+					if (!this.hasPosition) {
+						if (!this.options.showProgressive || depth <= 1) {
+							angle = index * stepAngle;
+							this.x = (50 * Math.cos(angle)) + parent.x;
+							this.y = (50 * Math.sin(angle)) + parent.y;
+							this.hasPosition = true;
+							this.el.css({
+								'left': this.x + "px",
+								'top': this.y + "px"
+							});
+						}
+					}
+				});
+				// update my position
+				return this.updatePosition();
+			};
+
+			// updatePosition returns a boolean stating whether it's been static
+			Node.prototype.updatePosition = function() {
+				var forces, showx, showy;
+
+				if (this.el.hasClass("ui-draggable-dragging")) {
+					this.x = parseInt(this.el.css('left'), 10) + (this.el.width() / 2);
+					this.y = parseInt(this.el.css('top'), 10) + (this.el.height() / 2);
+					this.dx = 0;
+					this.dy = 0;
+					return false;
+				}
+
+				//apply accelerations
+				forces = this.getForceVector();
+				this.dx += forces.x * this.options.timeperiod;
+				this.dy += forces.y * this.options.timeperiod;
+
+				// damp the forces
+				this.dx = this.dx * this.options.damping;
+				this.dy = this.dy * this.options.damping;
+
+				//ADD MINIMUM SPEEDS
+				if (Math.abs(this.dx) < this.options.minSpeed) {
+					this.dx = 0;
+				}
+				if (Math.abs(this.dy) < this.options.minSpeed) {
+					this.dy = 0;
+				}
+				if (Math.abs(this.dx) + Math.abs(this.dy) === 0) {
+					return true;
+				}
+				//apply velocity vector
+				this.x += this.dx * this.options.timeperiod;
+				this.y += this.dy * this.options.timeperiod;
+				this.x = Math.min(this.options.mapArea.x, Math.max(1, this.x));
+				this.y = Math.min(this.options.mapArea.y, Math.max(1, this.y));
+				// display
+				showx = this.x - (this.el.width() / 2);
+				showy = this.y - (this.el.height() / 2) - 10;
+				this.el.css({
+					'left': showx + "px",
+					'top': showy + "px"
+				});
+				return false;
+			};
+
+			Node.prototype.getForceVector = function() {
+				var i, x1, y1, xsign, dist, theta, f,
+					xdist, rightdist, bottomdist, otherend,
+					fx = 0,
+					fy = 0,
+					nodes = this.obj.nodes,
+					lines = this.obj.lines;
+
+				// Calculate the repulsive force from every other node
+				for (i = 0; i < nodes.length; i++) {
+					if (nodes[i] === this) {
+						continue;
+					}
+					if (!nodes[i].visible) {
+						continue;
+					}
+					// Repulsive force (coulomb's law)
+					x1 = (nodes[i].x - this.x);
+					y1 = (nodes[i].y - this.y);
+					//adjust for variable node size
+					//	  var nodewidths = (($(nodes[i]).width() + this.el.width())/2);
+					dist = Math.sqrt((x1 * x1) + (y1 * y1));
+					//		var myrepulse = this.options.repulse;
+					//		if (this.parent==nodes[i]) myrepulse=myrepulse*10;	//parents stand further away
+					if (Math.abs(dist) < 500) {
+						if (x1 === 0) {
+							theta = Math.PI / 2;
+							xsign = 0;
+						} else {
+							theta = Math.atan(y1 / x1);
+							xsign = x1 / Math.abs(x1);
+						}
+						// force is based on radial distance
+						f = (this.options.repulse * 500) / (dist * dist);
+						fx += -f * Math.cos(theta) * xsign;
+						fy += -f * Math.sin(theta) * xsign;
+					}
+				}
+
+				// add repulsive force of the "walls"
+				//left wall
+				xdist = this.x + this.el.width();
+				f = (this.options.wallrepulse * 500) / (xdist * xdist);
+				fx += Math.min(2, f);
+				//right wall
+				rightdist = (this.options.mapArea.x - xdist);
+				f = -(this.options.wallrepulse * 500) / (rightdist * rightdist);
+				fx += Math.max(-2, f);
+				//top wall
+				f = (this.options.wallrepulse * 500) / (this.y * this.y);
+				fy += Math.min(2, f);
+				//bottom wall
+				bottomdist = (this.options.mapArea.y - this.y);
+				f = -(this.options.wallrepulse * 500) / (bottomdist * bottomdist);
+				fy += Math.max(-2, f);
+
+				// for each line, of which I'm a part, add an attractive force.
+				for (i = 0; i < lines.length; i++) {
+					otherend = null;
+					if (lines[i].start === this) {
+						otherend = lines[i].end;
+					} else if (lines[i].end === this) {
+						otherend = lines[i].start;
+					} else {
+						continue;
+					}
+					// Ignore the pull of hidden nodes
+					if (!otherend.visible) {
+						continue;
+					}
+					// Attractive force (hooke's law)
+					x1 = (otherend.x - this.x);
+					y1 = (otherend.y - this.y);
+					dist = Math.sqrt((x1 * x1) + (y1 * y1));
+					if (Math.abs(dist) > 0) {
+						if (x1 === 0) {
+							theta = Math.PI / 2;
+							xsign = 0;
+						} else {
+							theta = Math.atan(y1 / x1);
+							xsign = x1 / Math.abs(x1);
+						}
+						// force is based on radial distance
+						f = (this.options.attract * dist) / 10000;
+						fx += f * Math.cos(theta) * xsign;
+						fy += f * Math.sin(theta) * xsign;
+					}
+				}
+
+				// if I'm active, attract me to the centre of the area
+				if (this.obj.activeNode === this) {
+					// Attractive force (hooke's law)
+					otherend = this.options.mapArea;
+					x1 = ((otherend.x / 2) - this.options.centreOffset - this.x);
+					y1 = ((otherend.y / 2) - this.y);
+					dist = Math.sqrt((x1 * x1) + (y1 * y1));
+					if (Math.abs(dist) > 0) {
+						if (x1 === 0) {
+							theta = Math.PI / 2;
+							xsign = 0;
+						} else {
+							xsign = x1 / Math.abs(x1);
+							theta = Math.atan(y1 / x1);
+						}
+						// force is based on radial distance
+						f = (0.1 * this.options.attract * dist * CENTRE_FORCE) / 1000;
+						fx += f * Math.cos(theta) * xsign;
+						fy += f * Math.sin(theta) * xsign;
+					}
+				}
+
+				if (Math.abs(fx) > this.options.maxForce) {
+					fx = this.options.maxForce * (fx / Math.abs(fx));
+				}
+				if (Math.abs(fy) > this.options.maxForce) {
+					fy = this.options.maxForce * (fy / Math.abs(fy));
+				}
+				return {
+					x: fx,
+					y: fy
+				};
+			};
+
+			Node.prototype.removeNode = function() {
+				var i,
+					oldnodes = this.obj.nodes,
+					oldlines = this.obj.lines;
+
+				for (i = 0; i < this.children.length; i++) {
+					this.children[i].removeNode();
+				}
+
+				this.obj.nodes = [];
+				for (i = 0; i < oldnodes.length; i++) {
+					if (oldnodes[i] === this) {
+						continue;
+					}
+					this.obj.nodes.push(oldnodes[i]);
+				}
+
+				this.obj.lines = [];
+				for (i = 0; i < oldlines.length; i++) {
+					if (oldlines[i].start === this) {
+						continue;
+					} else if (oldlines[i].end === this) {
+						continue;
+					}
+					this.obj.lines.push(oldlines[i]);
+				}
+
+				this.el.remove();
+			};
+
+			// Define all Line related functions.
+			Line = function(obj, startNode, endNode) {
+				this.obj = obj;
+				this.options = obj.options;
+				this.start = startNode;
+				this.colour = "blue";
+				this.size = "thick";
+				this.end = endNode;
+			};
+
+			Line.prototype.updatePosition = function() {
+				if (!this.options.showSublines && (!this.start.visible || !this.end.visible)) {
+					return;
+				}
+				this.size = (this.start.visible && this.end.visible) ? "thick" : "thin";
+				this.color = (this.obj.activeNode.parent === this.start || this.obj.activeNode.parent === this.end) ? "red" : "blue";
+				this.strokeStyle = "#FFF";
+
+				this.obj.canvas.path("M" + this.start.x + ' ' + this.start.y + "L" + this.end.x + ' ' + this.end.y).attr({
+					'stroke': this.strokeStyle,
+					'opacity': 0.2,
+					'stroke-width': '1px'
+				});
+			};
+
+			$.fn.addNode = function(parent, name, options) {
+				var obj = this[0],
+					node = obj.nodes[obj.nodes.length] = new Node(obj, name, parent, options);
+				//console.log(obj.root);
+				if (isShouldShow(node))
+					obj.root.animateToStatic();
+				return node;
+			};
+
+			$.fn.addRootNode = function(name, opts) {
+				var node = this[0].nodes[0] = new Node(this[0], name, null, opts);
+				this[0].root = node;
+				CURRENT_NODE = node;
+				node.el.show();
+				node.animateToStatic();
+				return node;
+			};
+
+			$.fn.removeNode = function(name) {
+				return this.each(function() {
+					//		if (!!this.mindmapInit) return false;
+					//remove a node matching the anme
+					//		alert(name+' removed');
+				});
+			};
+
+			$.fn.mindmap = function(options) {
+				// Define default settings.
+				options = $.extend({
+					attract: 15,
+					repulse: 2,
+					damping: 0.55,
+					timeperiod: 10,
+					wallrepulse: 0.4,
+					mapArea: {
+						x: -1,
+						y: -1
+					},
+					canvasError: 'alert',
+					minSpeed: 0.05,
+					maxForce: 0.1,
+					showSublines: false,
+					updateIterationCount: 20,
+					showProgressive: true,
+					centreOffset: 100,
+					timer: 0
+				}, options);
+
+				var $window = $(window);
+
+				return this.each(function() {
+					var mindmap = this;
+
+					this.mindmapInit = true;
+					this.nodes = [];
+					this.lines = [];
+					this.activeNode = null;
+					this.options = options;
+					this.animateToStatic = function() {
+						this.root.animateToStatic();
+					};
+					$window.resize(function() {
+						mindmap.animateToStatic();
+					});
+
+					//canvas
+					if (options.mapArea.x === -1) {
+						options.mapArea.x = $window.width();
+					}
+					if (options.mapArea.y === -1) {
+						options.mapArea.y = $window.height();
+					}
+					//create drawing area
+					this.canvas = Raphael(0, 0, options.mapArea.x, options.mapArea.y);
+
+					// Add a class to the object, so that styles can be applied
+					$(this).addClass('js-mindmap-active');
+
+					// Add keyboard support (thanks to wadefs)
+					$(this).keyup(function(event) {
+						return;
+						var newNode, i, activeParent = mindmap.activeNode.parent;
+						switch (event.which) {
+							case 33: // PgUp
+							case 38: // Up, move to parent
+								if (activeParent) {
+									activeParent.el.click();
+								}
+								break;
+								//case 13: // Enter (change to insert a sibling)
+							case 34: // PgDn
+							case 40: // Down, move to first child
+								if (mindmap.activeNode.children.length) {
+									mindmap.activeNode.children[0].el.click();
+								}
+								break;
+							case 37: // Left, move to previous sibling
+								if (activeParent) {
+									newNode = null;
+									if (activeParent.children[0] === mindmap.activeNode) {
+										newNode = activeParent.children[activeParent.children.length - 1];
+									} else {
+										for (i = 1; i < activeParent.children.length; i++) {
+											if (activeParent.children[i] === mindmap.activeNode) {
+												newNode = activeParent.children[i - 1];
+											}
+										}
+									}
+									if (newNode) {
+										newNode.el.click();
+									}
+								}
+								break;
+							case 39: // Right, move to next sibling
+								if (activeParent) {
+									newNode = null;
+									if (activeParent.children[activeParent.children.length - 1] === mindmap.activeNode) {
+										newNode = activeParent.children[0];
+									} else {
+										for (i = activeParent.children.length - 2; i >= 0; i--) {
+											if (activeParent.children[i] === mindmap.activeNode) {
+												newNode = activeParent.children[i + 1];
+											}
+										}
+									}
+									if (newNode) {
+										newNode.el.click();
+									}
+								}
+								break;
+							case 45: // Ins, insert a child
+								break;
+							case 46: // Del, delete this node
+								break;
+							case 27: // Esc, cancel insert
+								break;
+							case 83: // 'S', save
+								break;
+						}
+						return false;
+					});
+
+				});
+			};
+		}(jQuery));
+
+		function isShouldShow(node) {
+			/* 左辺はレンダリング対処の任意のnodeが入る */
+			/* 右辺のactiveNodeは全てのnodeが持つactiveNode情報 */
+			/* レンダリング判定対象 === 条件 */
+			var render_node = node;
+			var render_node_parent = render_node.parent;
+			var render_node_granpa = ((node.parent) ? node.parent.parent : null);
+			var active_node = node.obj.activeNode;
+			var active_node_parent = node.obj.activeNode.parent;
+			var active_node_granpa = ((node.obj.activeNode.parent) ? node.obj.activeNode.parent.parent : null);
+			return (true ||
+				render_node === active_node || //アクティブノードならレンダリングする
+				render_node === active_node_parent || //アクティブノードの親ならレンダリングする
+				render_node === active_node_granpa || //アクティブノードの親の親ならレンダリングする
+				render_node_parent === active_node || //そのノードの親がアクティブノードならレンダリングする(アクティブノードの子をレンダリングする)
+				render_node_parent === active_node_parent || //そのノードの親がアクティブノードの親ならレンダリングする(アクティブノードの親の子をレンダリングする)
+				render_node_parent === active_node_granpa ||
+				render_node_granpa === active_node ||
+				render_node_granpa === active_node_parent ||
+				render_node_granpa === active_node_granpa
+			)
+		}
+
+		/*jslint devel: true, browser: true, continue: true, plusplus: true, indent: 2 */
+
+		(function(global) {
+			var milkcocoa = new MilkCocoa("https://xxx.mlkcca.com");
+			var ROOT;
+			var DICTIONARY = {};
+			var roomID = decodeURI(location.hash.substr(1));
+			var chatstore = (roomID == null) ? 'chats' : 'chats/' + roomID;
+
+			/* roomの変更の監視 */
+			$(window).on('hashchange', function() {
+				location.reload();
+			});
+
+			$(document).ready(function() {
+				/* making rooms datastore */
+				var ds_rooms = milkcocoa.dataStore('rooms');
+				ds_rooms.set(roomID, {
+					"updated_date": new Date()
+				});
+
+				/* making chats datastore */
+				var ds = milkcocoa.dataStore(chatstore);
+				$('body').mindmap();
+				if (roomID) {
+					addNewNode('asRoot', '#' + roomID, '');
+				} else {
+					addNewNode('asRoot', '私', '');
+				}
+				getDataAndBuildFrom(ds);
+			});
+
+			$(document).on("keydown", function(e) {
+				if (e.which === 13) $('div.active').trigger('click');
+			});
+
+			milkcocoa.dataStore(chatstore).on("push", function(e) {
+				$('#modal-dialog').modal('hide');
+				var parent_node = DICTIONARY[e.value.parent_path];
+				addNewNode(parent_node, escapeHTML(e.value.label), escapeHTML(e.value.name))
+			});
+
+			function getDataAndBuildFrom(ds) {
+				ds.query({}).done(function(data) {
+					data.sort(function(a, b) {
+						var max = a.node_path.length;
+						var min = b.node_path.length;
+						if (min < max) return 1;
+						else if (min == max) return 0;
+						else return -1
+					});
+					data.forEach(function(elem, index, array) {
+						addNewNode(DICTIONARY[elem.parent_path], elem.label, elem.name);
+					});
+
+					/* レンダリング終了後childrenにする */
+					ROOT.children.forEach(function(node) {
+						node.el.addClass('children');
+					});
+				});
+			}
+
+			function addNewNode(parentNode, label, name) {
+				var label = escapeHTML(label);
+				var name = escapeHTML(name);
+
+				var returnNode;
+				var onclick = function(node) {
+					if (node === CURRENT_NODE) {
+						/* show modal */
+						$('#modal-dialog').modal('show');
+						var wLimit = 40;
+						$("div.modal-footer").prepend('<p class="init-count">' + wLimit + '</p>');
+
+						/* focus textarea */
+						$('#modal-dialog').on('shown.bs.modal', function() {
+							$("#label").focus();
+						});
+
+						/* バリデーションメッセージを隠す */
+						$('#modal-dialog').on('shown.bs.modal', function() {
+							$("p.count").hide();
+							$("p.init-count").hide();
+							$("p.modal-alert").hide();
+						});
+
+						/* when keydown length limit */
+						$("#label").off("keydown").on("keydown", function(e) {
+							if ($("p.init-count")) $("p.init-count").hide()
+							if ($("p.count")) $("p.count").hide()
+
+							var wLength = escapeHTML($("#label").val()).length;;
+							var wRemain = wLimit - wLength;
+							if (wRemain > 0) {
+								$("div.modal-footer").prepend('<p class="count">' + wRemain + '</p>');
+							} else if (wRemain === 0) {
+								$("div.modal-footer").prepend('<p class="count count-zero">' + wRemain + '</p>');
+							}
+
+							/* submit */
+							if ((e.shiftKey || e.metaKey || e.ctrlKey) && e.which === 13) $("#submit").trigger('click');
+							e.stopPropagation(); //親への伝播防止
+						});
+
+						/* click submit */
+						$("#submit").off("click").on("click", function() {
+							submit(node);
+						});
+					} else {
+						$(node.obj.activeNode.content).each(function() {
+							this.hide();
+						});
+					}
+				};
+				var onContextMenu = function(node) {};
+				//root Node
+				if (parentNode == null || parentNode == 'root' || parentNode == 'ROOT' || parentNode == 'asRoot') {
+					if (!ROOT) {
+						ROOT = $('body').addRootNode('noname', {
+							name: name,
+							label: label,
+							path: 'root',
+							onclick: onclick,
+							onContextMenu: onContextMenu
+						});
+					}
+					returnNode = ROOT
+				}
+				//normal node
+				else {
+					var node = $('body').addNode(parentNode, 'noname', {
+						label: label,
+						name: name,
+						path: parentNode.opts.path + '/' + label,
+						onclick: onclick,
+						onContextMenu: onContextMenu
+					});
+					returnNode = node
+				}
+				DICTIONARY[returnNode.opts.path] = returnNode;
+				return returnNode;
+			}
+
+			function submit(node) {
+				var label = escapeHTML($("textarea#label").val());
+				var name = escapeHTML($("textarea#name").val());
+				var parent_path = node.opts.path;
+				var node_path = parent_path + "/" + label;
+				var ds = milkcocoa.dataStore(chatstore);
+				if (!name) {
+					name = ""
+				}
+				if (label && !DICTIONARY[node_path]) {
+					ds.push({
+						"label": label,
+						"name": name,
+						"node_path": node_path,
+						"parent_path": parent_path
+					});
+					var ds_rooms = milkcocoa.dataStore('rooms');
+					ds_rooms.set(roomID, {
+						"updated_date": new Date()
+					});
+				} else {
+					$("div.modal-footer").append("<p class='modal-alert pull-left'>コメントは空白と重複がないようにしてください</p>");
+				}
+				return false;
+			};
+
+			function getParentPath(node) {
+				if (node.parent) {
+					return node.parent.opts.path;
+				} else {
+					//case root
+					return '';
+				}
+			}
+
+			function clearDataStore(ds) {
+				ds.query({}).done(function(data) {
+					data.forEach(function(elem) {
+						console.log('delete data id = ' + elem.id);
+						ds.remove(elem.id);
+					});
+				});
+			}
+
+			function escapeHTML(val) {
+				return $('<div />').text(val).html();
+			};
+		}(window));
+	</script>
+
+
+</head>
+
+<body>
+	<!-- Modal -->
+	<div id="modal-dialog" class="modal fade">
+		<!-- Modal本体 -->
+		<div class="modal-dialog">
+			<!-- Modalダイアログ部分 -->
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<!-- closeボタン -->
+					<h4 class="modal-title">マインドマップを書いて下さい。</h4>
+				</div>
+				<div class="modal-body">
+					<textarea id="label" rows="4" cols="90"></textarea>
+				</div>
+				<div class="modal-footer">
+					<button type="button" id="submit" class="btn btn-primary btn-lg">入力</button>
+				</div>
+			</div>
+			<!-- /.modal-content -->
+		</div>
+		<!-- /.modal-dialog -->
+	</div>
+	<!-- /.modal -->
+</body>
+
+</html>
